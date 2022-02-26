@@ -1,5 +1,7 @@
 import os
 import pickle
+from urllib import response
+from wsgiref import headers
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -76,7 +78,20 @@ def yt_song_info(response):
     return song_info
     
 
-#def get_spotify_song(track,artist):
+def create_spotify_playlist():
+    request_body = json.dumps({
+  "name": "New Playlist",
+  "description": "New playlist description",
+  "public": False             })
+    spotify_request = query = "https://api.spotify.com/v1/users/{}/playlists".format(
+        #####spotify user)
+    spotify_response = request.post(
+        spotify_request,
+        data = request_body,
+        headers = {"Content-Type": "application/json",
+            "Authorization": "Bearer {}".format("spotify_token")}
+    )
+    return spotify_response["id"]
     
     
 

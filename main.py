@@ -6,35 +6,37 @@ from google.auth.transport.requests import Request
 from youtube_dl import YoutubeDL
 
 
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=(r"C:\Users\jacob\OneDrive\Desktop\Programs\python_practice\youtubeToSpotify\youtubetospotify-342118-185125a4832a.json")
 credentials = None
 
-def authentication():
-    if os.path.exists("token.pickle"):
-        print("Loading credentials")
-        with open("token.pickle", "rb") as token:
-            credentials = pickle.load(token)
 
-    if not credentials or not credentials.valid:
-        if credentials and credentials.expired and credentials.refresh_token:
-            print('Refreshing Access Token...')
-            credentials.refresh(Request())
-        else:
-            print('Fetching New Tokens...')
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'client_secret.json.json',
-                scopes=[
-                    'https://www.googleapis.com/auth/youtube.readonly'
-                ]
-            )
+if os.path.exists("token.pickle"):
+    print("Loading credentials")
+    with open("token.pickle", "rb") as token:
+        credentials = pickle.load(token)
+    
+if not credentials or not credentials.valid:
+    if credentials and credentials.expired and credentials.refresh_token:
+        print('Refreshing Access Token...')
+        credentials.refresh(Request())
+    else:
+        print('Fetching New Tokens...')
+        flow = InstalledAppFlow.from_client_secrets_file(
+            'client_secret.json',
+            scopes=[
+                'https://www.googleapis.com/auth/youtube.readonly'
+            ]
+        )
 
-            flow.run_local_server(port=8080, prompt='consent',
-                                authorization_prompt_message='')
-            credentials = flow.credentials
+        flow.run_local_server(port=8080, prompt='consent',
+                            authorization_prompt_message='')
+        credentials = flow.credentials
 
-            # Save the credentials for the next run
-            with open('token.pickle', 'wb') as f:
-                print('Saving Credentials')
-                pickle.dump(credentials, f)
+        # Save the credentials for the next run
+        with open('token.pickle', 'wb') as f:
+            print('Saving Credentials')
+            pickle.dump(credentials, f)
+
             
 
 def request_response():
@@ -43,16 +45,17 @@ def request_response():
 
     request = youtube.playlistItems().list(
         part='status, contentDetails',
-        playlistId= 'RDLUP0NjzDLPY',
+        playlistId= 'PLaJd4NqiJg0gmkgnS7KJA8VV24UGg8hIs',
         maxResults = 50                         
     )
-
+    response = request.execute()
+    yt_song_info(response)
     # request = youtube.playlistItems().list(
     #     part='snippet',
     #     playlistId= 'RDLUP0NjzDLPY',
     #     maxResults = 50                         
     # )
-    response = request.execute()
+    
     #print(response)
 
 
@@ -70,7 +73,18 @@ def yt_song_info(response):
         song_info.append((track,artist))
         print(song_info)
         
-    #return song_info
+    return song_info
     
-yt_song_info()   
+
+#def get_spotify_song(track,artist):
+    
+    
+
+
+
+
+
+
+
+#request_response()
 

@@ -8,11 +8,33 @@ from google.auth.transport.requests import Request
 from youtube_dl import YoutubeDL
 import requests
 import json
+import spotipy
+import spotipy.oauth2 as oauth2
+from spotipy.oauth2 import SpotifyClientCredentials
 
 credentials = None
-spotify_user = '########'
-spotify_code = '############'
-def youtube_auth():
+scopes=['https://www.googleapis.com/auth/youtube.readonly']
+
+client_id='4f1eb090c2ba4ef9b1aaed2f98e748ce'
+client_secret='dc2ba2db68224eab98ab51aedc89f454'
+
+#sscope = "user-library-read"
+
+#sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=sscope))
+
+
+
+
+
+def get_spotify_token():
+    """ Generate the token. Please respect these credentials :) """
+    spotify_credentials = oauth2.SpotifyClientCredentials(
+        client_id='4f1eb090c2ba4ef9b1aaed2f98e748ce',
+        client_secret='dc2ba2db68224eab98ab51aedc89f454')
+    spot_token = spotify_credentials.get_access_token()
+    return spot_token
+
+def youtube_auth(credentials):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=(r"C:\Users\jacob\OneDrive\Desktop\Programs\python_practice\youtubeToSpotify\youtubetospotify-342118-185125a4832a.json")
    
 
@@ -29,10 +51,8 @@ def youtube_auth():
         else:
             print('Fetching New Tokens...')
             flow = InstalledAppFlow.from_client_secrets_file(
-                'client_secret.json',
-                scopes=[
-                    'https://www.googleapis.com/auth/youtube.readonly'
-                ]
+                'client_secret.json', scopes
+                
             )
 
             flow.run_local_server(port=8080, prompt='consent',
@@ -78,10 +98,10 @@ def youtube_auth():
 
 
 
-def yt_song_info(response):
+def yt_song_info(list):
   
     song_info= []
-    for item in response["items"]:
+    for item in list["items"]:
         
         video_id = item["contentDetails"]["videoId"]
         youtube_link = f"https://youtu.be/{video_id}"
@@ -105,30 +125,27 @@ def create_spotify_playlist():
         }
     )
     spotify_request  = "https://api.spotify.com/v1/users/{}/playlists".format(
-        spotify_user)
+        client_id)
     spotify_response = requests.post(
         spotify_request,
         data = request_body,
         headers = {"Content-Type": "application/json",
-            "Authorization": "Bearer {}".format(spotify_code)}
+            "Authorization": "Bearer BQB9wDfMnKuYV3gjL2I9LdKf86yHlBy4DTItXk3V4d9jU9r44nIptHLd4X_yWSvz_XZ0bo2wZ1bQV9GUMt4iu8hzt0-iS7C0cU61UvHCwQp443AJ836-_B0JmdSEfR-6fzFmPn232twFx-iEwg0NoKTJv2NBEgT9cuOaZG7zw65Ft4nekPXuKLoztQ3540BNi2B86a-z2CiZind-KqZbtAjgUrPzoFpn-Ub_c-xginZ9bnydQA"}
     )
     #print(spotify_response)
     return spotify_response
 
 def spotify_urls(track,artist):
-    url_query = "https://api.spotify.com/v1/search?query=track%3A{}+artist%3A{}&type=track".format(
-        track,
-        artist
-    )
+    url_query = "https://api.spotify.com/v1/search?q={}%2C{}&type=track,artist".format(track,artist)
     response = requests.get(url_query,
         headers={
             "Content-Type": "application/json",
-            "Authorization": "Bearer {}".format(spotify_code)
+            "Authorization": "Bearer BQB9wDfMnKuYV3gjL2I9LdKf86yHlBy4DTItXk3V4d9jU9r44nIptHLd4X_yWSvz_XZ0bo2wZ1bQV9GUMt4iu8hzt0-iS7C0cU61UvHCwQp443AJ836-_B0JmdSEfR-6fzFmPn232twFx-iEwg0NoKTJv2NBEgT9cuOaZG7zw65Ft4nekPXuKLoztQ3540BNi2B86a-z2CiZind-KqZbtAjgUrPzoFpn-Ub_c-xginZ9bnydQA"
         }
     )
-    response = response.json()
-    print(response)
-    songs = response["tracks"]["items"]
+    response_json = response.json()
+    #print(response_json)
+    songs = response_json["tracks"]["items"]
     
     url = songs[0]["uri"]
     
@@ -145,13 +162,15 @@ def add_song_to_spotify_playlist(playlist_id,urls):
         data=request_data,
         headers={
             "Content-Type": "application/json",
-            "Authorization": "Bearer {}".format("spotify_token")
+            "Authorization": "Bearer BQB9wDfMnKuYV3gjL2I9LdKf86yHlBy4DTItXk3V4d9jU9r44nIptHLd4X_yWSvz_XZ0bo2wZ1bQV9GUMt4iu8hzt0-iS7C0cU61UvHCwQp443AJ836-_B0JmdSEfR-6fzFmPn232twFx-iEwg0NoKTJv2NBEgT9cuOaZG7zw65Ft4nekPXuKLoztQ3540BNi2B86a-z2CiZind-KqZbtAjgUrPzoFpn-Ub_c-xginZ9bnydQA"
         }
     )
   
     return "Song added"
 
-response = youtube_auth()
+
+stoken = get_spotify_token()
+response = youtube_auth(credentials)
 playlist = create_spotify_playlist()
 song_details = yt_song_info(response)
 
@@ -159,4 +178,4 @@ song_urls = []
 for i in range(len(response['items'])):
     song_urls.append(spotify_urls(song_details[i][0], song_details[i][1]))
     
-add_song_to_spotify_playlist(play_id, urls)
+add_song_to_spotify_playlist(playlist, song_urls)

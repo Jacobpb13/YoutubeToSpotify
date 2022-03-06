@@ -12,7 +12,7 @@ import spotipy
 import spotipy.oauth2 as oauth2
 from spotipy.oauth2 import SpotifyClientCredentials
 import details
-from details import account_name,client_id,client_secret
+from details import account_name,client_id,client_secret,url_token,playlist_token
 
 credentials = None
 scopes=['https://www.googleapis.com/auth/youtube.readonly']
@@ -21,18 +21,9 @@ client_id= details.client_id
 client_secret= details.client_secret
 account = details.account_name
 
-
-
-
-def get_spotify_token():
-    """ Generate the token. Please respect these credentials :) """
-    spotify_credentials = oauth2.SpotifyClientCredentials(
-        client_id,
-        client_secret)
-    spot_token = spotify_credentials.get_access_token()
-    return spot_token
-
 def youtube_auth(credentials):
+    """OAuth for youtube, requests a refresh token or creates a new one and saves"""
+    
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=(r"C:\Users\jacob\OneDrive\Desktop\Programs\python_practice\youtubeToSpotify\youtubetospotify-342118-185125a4832a.json")
    
 
@@ -41,7 +32,7 @@ def youtube_auth(credentials):
         print("Loading credentials")
         with open("token.pickle", "rb") as token:
             credentials = pickle.load(token)
-           # request_response()
+           
     if not credentials or not credentials.valid:
         if credentials and credentials.expired and credentials.refresh_token:
             print('Refreshing Access Token...')
@@ -57,17 +48,17 @@ def youtube_auth(credentials):
                                 authorization_prompt_message='')
             credentials = flow.credentials
 
-            # Save the credentials for the next run
+            # Save the credentials for reuse
             with open('token.pickle', 'wb') as f:
                 print('Saving Credentials')
                 pickle.dump(credentials, f)
-               # request_response()
+               
     
     youtube = build('youtube', 'v3', credentials=credentials)
 
     request = youtube.playlistItems().list(
         part='status, contentDetails',
-        playlistId= 'PLaJd4NqiJg0gmkgnS7KJA8VV24UGg8hIs',
+        playlistId= 'PLaJd4NqiJg0gmkgnS7KJA8VV24UGg8hIs',   #change this youtube playlistID
         maxResults = 50                         
     )
     response = request.execute()
@@ -75,7 +66,8 @@ def youtube_auth(credentials):
 
 
 def yt_song_info(list):
-  
+    """Obtains the song details from youtube api and generates a link"""
+    
     song_info= []
     for item in list["items"]:
         
@@ -93,7 +85,9 @@ def yt_song_info(list):
     
 
 def create_spotify_playlist():
-    print("making playlist")
+    """Creates a spotify playlist using spotify api post"""
+    
+    print("Creating spotify playlist...")
     request_body = json.dumps(
         {
             "name": "YouTube Playlist",
@@ -108,23 +102,25 @@ def create_spotify_playlist():
         spotify_request,
         data = request_body,
         headers = {"Content-Type": "application/json",
-            "Authorization": "Bearer ###insert token###"}
+            "Authorization": "Bearer {}".format(playlist_token)}
     )
     
     spotify_response = spotify_response.json()
-    print(spotify_response)
-    #return spotify_response["id"]
+    
+    return spotify_response["id"]
 
 def spotify_urls(track,artist):
+    """Finds the songs on spotify using the youtube details"""
+    
     url_query = "https://api.spotify.com/v1/search?q={}%2C{}&type=track,artist".format(track,artist)
     response = requests.get(url_query,
         headers={
             "Content-Type": "application/json",
-            "Authorization": "Bearer ###insert token###"
+            "Authorization": "Bearer {}".format(url_token)
         }
     )
     response_json = response.json()
-    #print(response_json)
+    
     songs = response_json["tracks"]["items"]
     
     url = songs[0]["uri"]
@@ -132,7 +128,9 @@ def spotify_urls(track,artist):
     return url
 
 def add_song_to_spotify_playlist(playlist_id,urls):
-    print("adding song to playlist")
+    """Adds the songs found on spotify to the created playlist"""
+    
+    print("Adding songs to spotify playlist...")
     request_data = json.dumps(urls)
   
     query = "https://api.spotify.com/v1/playlists/{}/tracks".format(
@@ -143,14 +141,14 @@ def add_song_to_spotify_playlist(playlist_id,urls):
         data=request_data,
         headers={
             "Content-Type": "application/json",
-            "Authorization": "Bearer ###insert token###"
+            "Authorization": "Bearer {}".format(playlist_token)
         }
     )
   
-    return "successfully added"
+    print("Successfully made playlist!")
 
 
-stoken = get_spotify_token()
+
 response = youtube_auth(credentials)
 playlist = create_spotify_playlist()
 song_details = yt_song_info(response)

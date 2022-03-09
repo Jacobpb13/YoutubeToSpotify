@@ -13,6 +13,11 @@ import spotipy.oauth2 as oauth2
 from spotipy.oauth2 import SpotifyClientCredentials
 import details
 from details import account_name,client_id,client_secret,url_token,playlist_token
+import base64
+
+
+    
+
 
 credentials = None
 scopes=['https://www.googleapis.com/auth/youtube.readonly']
@@ -20,6 +25,9 @@ scopes=['https://www.googleapis.com/auth/youtube.readonly']
 client_id= details.client_id
 client_secret= details.client_secret
 account = details.account_name
+
+
+    
 
 def youtube_auth(credentials):
     """OAuth for youtube, requests a refresh token or creates a new one and saves"""
@@ -95,14 +103,13 @@ def create_spotify_playlist():
             "public": False             
         }
     )
-    spotify_request  = "https://api.spotify.com/v1/users/{}/playlists".format(
-        account_name) 
+    spotify_request  = f"https://api.spotify.com/v1/users/{account_name}/playlists"
     
     spotify_response = requests.post(
         spotify_request,
         data = request_body,
         headers = {"Content-Type": "application/json",
-            "Authorization": "Bearer {}".format(playlist_token)}
+            "Authorization": f"Bearer {playlist_token}"}
     )
     
     spotify_response = spotify_response.json()
@@ -112,11 +119,11 @@ def create_spotify_playlist():
 def spotify_urls(track,artist):
     """Finds the songs on spotify using the youtube details"""
     
-    url_query = "https://api.spotify.com/v1/search?q={}%2C{}&type=track,artist".format(track,artist)
+    url_query = f"https://api.spotify.com/v1/search?q={track}%2C{artist}&type=track,artist"
     response = requests.get(url_query,
         headers={
             "Content-Type": "application/json",
-            "Authorization": "Bearer {}".format(url_token)
+            "Authorization": f"Bearer {url_token}"
         }
     )
     response_json = response.json()
@@ -133,15 +140,14 @@ def add_song_to_spotify_playlist(playlist_id,urls):
     print("Adding songs to spotify playlist...")
     request_data = json.dumps(urls)
   
-    query = "https://api.spotify.com/v1/playlists/{}/tracks".format(
-        playlist_id)
+    query = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
   
     response = requests.post(
         query,
         data=request_data,
         headers={
             "Content-Type": "application/json",
-            "Authorization": "Bearer {}".format(playlist_token)
+            "Authorization": f"Bearer {playlist_token}"
         }
     )
   

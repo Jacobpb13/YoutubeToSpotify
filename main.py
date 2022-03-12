@@ -9,6 +9,7 @@ from youtube_dl import YoutubeDL
 import requests
 import json
 import spotipy
+import spotipy.util as util
 import spotipy.oauth2 as oauth2
 from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 import details
@@ -18,22 +19,28 @@ import base64
 credentials = None
 scopes=['https://www.googleapis.com/auth/youtube.readonly']
 
-client_id1= details.client_id
-client_secret1= details.client_secret
+client_id= details.client_id
+client_secret= details.client_secret
 account = details.account_name
 
 def spotify_auth():
+    AUTH_URL = 'https://accounts.spotify.com/api/token'
+
+    # POST
+    auth_response = requests.post(AUTH_URL, {
+        'grant_type': 'client_credentials',
+        'client_id': client_id,
+        'client_secret': client_secret,
+    })
+
+    # convert the response to JSON
+    auth_response_data = auth_response.json()
+    print(auth_response_data)
+    # save the access token
+    access_token = auth_response_data['access_token']
     
-    scope = "playlist-modify-private"
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-        scope=scope,
-        client_id=client_id1,
-        client_secret=client_secret1,
-        redirect_uri='http://127.0.0.1:9090'))
+    return access_token
     
-    return sp
-    
-        
 
 def youtube_auth(credentials):
     """OAuth for youtube, requests a refresh token or creates a new one and saves"""

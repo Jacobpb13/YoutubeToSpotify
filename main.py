@@ -10,24 +10,30 @@ import requests
 import json
 import spotipy
 import spotipy.oauth2 as oauth2
-from spotipy.oauth2 import SpotifyClientCredentials
+from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 import details
-from details import account_name,client_id,client_secret,url_token,playlist_token
+from details import *
 import base64
-
-
-    
-
 
 credentials = None
 scopes=['https://www.googleapis.com/auth/youtube.readonly']
 
-client_id= details.client_id
-client_secret= details.client_secret
+client_id1= details.client_id
+client_secret1= details.client_secret
 account = details.account_name
 
-
+def spotify_auth():
     
+    scope = "playlist-modify-private"
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+        scope=scope,
+        client_id=client_id1,
+        client_secret=client_secret1,
+        redirect_uri='http://127.0.0.1:9090'))
+    
+    return sp
+    
+        
 
 def youtube_auth(credentials):
     """OAuth for youtube, requests a refresh token or creates a new one and saves"""
@@ -63,13 +69,15 @@ def youtube_auth(credentials):
                
     
     youtube = build('youtube', 'v3', credentials=credentials)
-
+    
+    
     request = youtube.playlistItems().list(
         part='status, contentDetails',
         playlistId= 'PLaJd4NqiJg0gmkgnS7KJA8VV24UGg8hIs',   #change this youtube playlistID
-        maxResults = 50                         
-    )
+        maxResults = 50                        
+        )
     response = request.execute()
+        
     return response
 
 
@@ -81,7 +89,7 @@ def yt_song_info(list):
         
         video_id = item["contentDetails"]["videoId"]
         youtube_link = f"https://youtu.be/{video_id}"
-        print(youtube_link)
+        #print(youtube_link)
         
         song_and_artist = YoutubeDL({}).extract_info(youtube_link, download=False)
         track, artist = song_and_artist['track'], song_and_artist['artist']
@@ -109,11 +117,11 @@ def create_spotify_playlist():
         spotify_request,
         data = request_body,
         headers = {"Content-Type": "application/json",
-            "Authorization": f"Bearer {playlist_token}"}
+            "Authorization": f"Bearer {spotify_auth}"}
     )
     
     spotify_response = spotify_response.json()
-    
+    print(spotify_response)
     return spotify_response["id"]
 
 def spotify_urls(track,artist):
@@ -123,7 +131,7 @@ def spotify_urls(track,artist):
     response = requests.get(url_query,
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {url_token}"
+            "Authorization": f"Bearer {spotify_auth}"
         }
     )
     response_json = response.json()
@@ -147,20 +155,23 @@ def add_song_to_spotify_playlist(playlist_id,urls):
         data=request_data,
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {playlist_token}"
+            "Authorization": f"Bearer {spotify_auth}"
         }
     )
   
     print("Successfully made playlist!")
 
 
+def run():
+    spotify_auth()
+    response = youtube_auth(credentials)
+    playlist = create_spotify_playlist()
+    song_details = yt_song_info(response)
 
-response = youtube_auth(credentials)
-playlist = create_spotify_playlist()
-song_details = yt_song_info(response)
-
-song_urls = []
-for i in range(len(response['items'])):
-    song_urls.append(spotify_urls(song_details[i][0], song_details[i][1]))
+    song_urls = []
+    for i in range(len(response['items'])):
+        song_urls.append(spotify_urls(song_details[i][0], song_details[i][1]))
+        
+    add_song_to_spotify_playlist(playlist, song_urls)
     
-add_song_to_spotify_playlist(playlist, song_urls)
+run()

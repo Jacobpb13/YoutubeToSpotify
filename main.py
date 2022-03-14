@@ -1,5 +1,6 @@
 import os
 import pickle
+from tokenize import Token
 from urllib import response
 from wsgiref import headers
 from googleapiclient.discovery import build
@@ -15,6 +16,7 @@ from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 import details
 from details import *
 import base64
+import asyncio
 
 credentials = None
 scopes=['https://www.googleapis.com/auth/youtube.readonly']
@@ -23,23 +25,25 @@ client_id= details.client_id
 client_secret= details.client_secret
 account = details.account_name
 
-def spotify_auth():
+def spotify_auth(client_id, client_secret):
     AUTH_URL = 'https://accounts.spotify.com/api/token'
 
-    # POST
-    auth_response = requests.post(AUTH_URL, {
-        'grant_type': 'client_credentials',
-        'client_id': client_id,
-        'client_secret': client_secret,
-    })
-
-    # convert the response to JSON
-    auth_response_data = auth_response.json()
-    print(auth_response_data)
-    # save the access token
-    access_token = auth_response_data['access_token']
+    authHeader = {}
+    authData = {}
+    #scopes = 'playlist-modify-private'
+    message = f"{client_id}:{client_secret}"
+    message_bytes = message.encode('ascii')
+    base64_bytes = base64.b64encode(message_bytes)
+    base64_message = base64_bytes.decode('ascii')
+    authHeader['Authorization'] = "Basic " + base64_message
+    authData['grant_type'] = "client_credentials"
+    request = requests.post(AUTH_URL, headers=authHeader, data=authData)
     
+    responseObj = request.json()
+    print(json.dumps(responseObj, indent=2))
+    access_token = responseObj['access_token']
     return access_token
+    
     
 
 def youtube_auth(credentials):
@@ -118,13 +122,13 @@ def create_spotify_playlist():
             "public": False             
         }
     )
-    spotify_request  = f"https://api.spotify.com/v1/users/{account_name}/playlists"
+    spotify_url  = f"https://api.spotify.com/v1/users/{account_name}/playlists"
     
     spotify_response = requests.post(
-        spotify_request,
+        spotify_url,
         data = request_body,
         headers = {"Content-Type": "application/json",
-            "Authorization": f"Bearer {spotify_auth}"}
+            "Authorization": f"Bearer {spotify_auth(client_id,client_secret)}"}
     )
     
     spotify_response = spotify_response.json()
@@ -138,7 +142,7 @@ def spotify_urls(track,artist):
     response = requests.get(url_query,
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {spotify_auth}"
+            "Authorization": f"Bearer {spotify_auth(client_id,client_secret)}"
         }
     )
     response_json = response.json()
@@ -162,7 +166,7 @@ def add_song_to_spotify_playlist(playlist_id,urls):
         data=request_data,
         headers={
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {spotify_auth}"
+            "Authorization": f"Bearer {spotify_auth(client_id,client_secret)}"
         }
     )
   
@@ -170,7 +174,8 @@ def add_song_to_spotify_playlist(playlist_id,urls):
 
 
 def run():
-    spotify_auth()
+    access = spotify_auth(client_id,client_secret)
+    print(access)
     response = youtube_auth(credentials)
     playlist = create_spotify_playlist()
     song_details = yt_song_info(response)
@@ -180,5 +185,6 @@ def run():
         song_urls.append(spotify_urls(song_details[i][0], song_details[i][1]))
         
     add_song_to_spotify_playlist(playlist, song_urls)
+    
     
 run()

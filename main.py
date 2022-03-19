@@ -1,23 +1,15 @@
 import os
 import pickle
-from tokenize import Token
-from urllib import response
-from wsgiref import headers
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from youtube_dl import YoutubeDL
 import requests
 import json
-import spotipy
 import spotipy.util as util
-import spotipy.oauth2 as oauth2
-from spotipy.oauth2 import SpotifyClientCredentials, SpotifyOAuth
 import details
 from details import *
-import base64
-import asyncio
-import random
+
 
 credentials = None
 scopes=['https://www.googleapis.com/auth/youtube.readonly']
@@ -74,13 +66,28 @@ def youtube_auth(credentials):
     
     
     request = youtube.playlistItems().list(
-        part='status, contentDetails',
-        playlistId= 'PLaJd4NqiJg0gmkgnS7KJA8VV24UGg8hIs',   #change this youtube playlistID
-        maxResults = 50                        
-        )
-    response = request.execute()
+        part='id, contentDetails',
+        playlistId= 'PLDIoUOhQQPlXr63I_vwF9GD8sAKh77dWU',   #change this youtube playlistID
+        maxResults = 50,                       
+        ).execute()
+    
+    nextPageToken = request.get('nextPageToken')
+    while ('nextPageToken' in request):
+        nextPage = youtube.playlistItems().list(
+        part="snippet",
+        playlistId='PLDIoUOhQQPlXr63I_vwF9GD8sAKh77dWU',
+        maxResults="50",
+        pageToken=nextPageToken
+        ).execute()
+        request['items'] = request['items'] + nextPage['items']
+
+        if 'nextPageToken' not in nextPage:
+            request.pop('nextPageToken', None)
+        else:
+            nextPageToken = nextPage['nextPageToken']
+    print(request)
         
-    return response
+    return request
 
 
 def yt_song_info(list):

@@ -67,7 +67,7 @@ def youtube_auth(credentials):
     
     request = youtube.playlistItems().list(
         part='id, contentDetails',
-        playlistId= 'PLDIoUOhQQPlXr63I_vwF9GD8sAKh77dWU',   #change this youtube playlistID
+        playlistId= 'PL2xYK7vhGRvzisC_k8lNmKRue-bfjfV5s',   #change this youtube playlistID
         maxResults = 50,                       
         ).execute()
     
@@ -75,7 +75,7 @@ def youtube_auth(credentials):
     while ('nextPageToken' in request):
         nextPage = youtube.playlistItems().list(
         part="snippet",
-        playlistId='PLDIoUOhQQPlXr63I_vwF9GD8sAKh77dWU',
+        playlistId='PL2xYK7vhGRvzisC_k8lNmKRue-bfjfV5s',
         maxResults="50",
         pageToken=nextPageToken
         ).execute()
@@ -100,13 +100,18 @@ def yt_song_info(list):
         youtube_link = f"https://youtu.be/{video_id}"
         #print(youtube_link)
         
-        song_and_artist = YoutubeDL({}).extract_info(youtube_link, download=False)
-        track, artist = song_and_artist['track'], song_and_artist['artist']
+        try:
+            song_and_artist = YoutubeDL({}).extract_info(youtube_link, download=False)
+            track, artist = song_and_artist['track'], song_and_artist['artist']
+            song_info.append((track,artist))
+                
+            print(song_info)
+                
+        except KeyError:
+            print('song skipped')
+            return song_info
         
-        song_info.append((track,artist))
-        print(song_info)
-        
-    return song_info
+                
     
 
 def create_spotify_playlist():

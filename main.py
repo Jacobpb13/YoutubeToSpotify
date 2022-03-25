@@ -1,3 +1,4 @@
+from codecs import ignore_errors
 import os
 import pickle
 from googleapiclient.discovery import build
@@ -67,7 +68,7 @@ def youtube_auth(credentials):
     
     request = youtube.playlistItems().list(
         part='id, contentDetails',
-        playlistId= 'PL2xYK7vhGRvzisC_k8lNmKRue-bfjfV5s',   #change this youtube playlistID
+        playlistId= 'PL7v1FHGMOadBTndBvtY4h213M10Pl9Y1c',   #change this youtube playlistID
         maxResults = 50,                       
         ).execute()
     
@@ -75,7 +76,7 @@ def youtube_auth(credentials):
     while ('nextPageToken' in request):
         nextPage = youtube.playlistItems().list(
         part="snippet",
-        playlistId='PL2xYK7vhGRvzisC_k8lNmKRue-bfjfV5s',
+        playlistId='PL7v1FHGMOadBTndBvtY4h213M10Pl9Y1c',
         maxResults="50",
         pageToken=nextPageToken
         ).execute()
@@ -85,7 +86,7 @@ def youtube_auth(credentials):
             request.pop('nextPageToken', None)
         else:
             nextPageToken = nextPage['nextPageToken']
-    print(request)
+    #print(request)
         
     return request
 
@@ -101,15 +102,22 @@ def yt_song_info(list):
         #print(youtube_link)
         
         try:
-            song_and_artist = YoutubeDL({}).extract_info(youtube_link, download=False)
+            song_and_artist = YoutubeDL({'ignoreerrors': True}).extract_info(youtube_link, download=False)
             track, artist = song_and_artist['track'], song_and_artist['artist']
-            song_info.append((track,artist))
-                
-            print(song_info)
-                
+            if not song_and_artist:
+                return []
+            else:
+                song_info.append((track, artist))
+                print(song_info)    
+            
+        
         except KeyError:
-            print('song skipped')
-            return song_info
+            print('Song skipped')
+            track = "Broken Strings"
+            artist = 'James Morrison'
+            song_info.append((track,artist))
+            # return song_info
+        
         
                 
     
@@ -135,7 +143,7 @@ def create_spotify_playlist():
     )
     
     spotify_response = spotify_response.json()
-    print(spotify_response)
+    #print(spotify_response)
     return spotify_response["id"]
 
 def spotify_urls(track,artist):
@@ -153,6 +161,7 @@ def spotify_urls(track,artist):
     songs = response_json["tracks"]["items"]
     
     url = songs[0]["uri"]
+       
     
     return url
 

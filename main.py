@@ -69,13 +69,13 @@ def youtube_auth(credentials):
     request = youtube.playlistItems().list(
         part='id, contentDetails',
         playlistId= 'PL7v1FHGMOadBTndBvtY4h213M10Pl9Y1c',   #change this youtube playlistID
-        maxResults = 50,                       
+        maxResults = '50',                       
         ).execute()
     
     nextPageToken = request.get('nextPageToken')
     while ('nextPageToken' in request):
         nextPage = youtube.playlistItems().list(
-        part="snippet",
+        part="id, contentDetails",
         playlistId='PL7v1FHGMOadBTndBvtY4h213M10Pl9Y1c',
         maxResults="50",
         pageToken=nextPageToken
@@ -86,7 +86,7 @@ def youtube_auth(credentials):
             request.pop('nextPageToken', None)
         else:
             nextPageToken = nextPage['nextPageToken']
-    #print(request)
+    print(request)
         
     return request
 

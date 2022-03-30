@@ -18,7 +18,7 @@ scopes=['https://www.googleapis.com/auth/youtube.readonly']
 client_id= details.client_id
 client_secret= details.client_secret
 account = details.account_name
-
+cookies = details.cookies
 
 
 
@@ -68,7 +68,7 @@ def youtube_auth(credentials):
     
     request = youtube.playlistItems().list(
         part='id, contentDetails',
-        playlistId= 'PL7v1FHGMOadBTndBvtY4h213M10Pl9Y1c',   #change this youtube playlistID
+        playlistId= 'PLDIoUOhQQPlXr63I_vwF9GD8sAKh77dWU',   #change this youtube playlistID
         maxResults = '50',                       
         ).execute()
     
@@ -76,7 +76,7 @@ def youtube_auth(credentials):
     while ('nextPageToken' in request):
         nextPage = youtube.playlistItems().list(
         part="id, contentDetails",
-        playlistId='PL7v1FHGMOadBTndBvtY4h213M10Pl9Y1c',
+        playlistId='PLDIoUOhQQPlXr63I_vwF9GD8sAKh77dWU',
         maxResults="50",
         pageToken=nextPageToken
         ).execute()
@@ -102,13 +102,14 @@ def yt_song_info(list):
         #print(youtube_link)
         
         try:
-            song_and_artist = YoutubeDL({'ignoreerrors': True}).extract_info(youtube_link, download=False)
+            song_and_artist = YoutubeDL({'ignore-errors': True, 'cookiefile': cookies}).extract_info(youtube_link, download=False)
             track, artist = song_and_artist['track'], song_and_artist['artist']
             if not song_and_artist:
-                return []
+                return song_info
             else:
                 song_info.append((track, artist))
-                print(song_info)    
+                print(song_info)
+                   
             
         
         except KeyError:
@@ -116,7 +117,8 @@ def yt_song_info(list):
             track = "Broken Strings"
             artist = 'James Morrison'
             song_info.append((track,artist))
-            # return song_info
+            
+        
         
         
                 

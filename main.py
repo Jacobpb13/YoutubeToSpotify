@@ -68,7 +68,7 @@ def youtube_auth(credentials):
     
     request = youtube.playlistItems().list(
         part='id, contentDetails',
-        playlistId= 'PLDIoUOhQQPlXr63I_vwF9GD8sAKh77dWU',   #change this youtube playlistID
+        playlistId= 'PLaJd4NqiJg0gmkgnS7KJA8VV24UGg8hIs',   #change this youtube playlistID
         maxResults = '50',                       
         ).execute()
     
@@ -76,7 +76,7 @@ def youtube_auth(credentials):
     while ('nextPageToken' in request):
         nextPage = youtube.playlistItems().list(
         part="id, contentDetails",
-        playlistId='PLDIoUOhQQPlXr63I_vwF9GD8sAKh77dWU',
+        playlistId='PLaJd4NqiJg0gmkgnS7KJA8VV24UGg8hIs',
         maxResults="50",
         pageToken=nextPageToken
         ).execute()
@@ -103,20 +103,21 @@ def yt_song_info(list):
         
         try:
             song_and_artist = YoutubeDL({'ignore-errors': True, 'cookiefile': cookies}).extract_info(youtube_link, download=False)
+            #print(song_and_artist)
             track, artist = song_and_artist['track'], song_and_artist['artist']
-            if not song_and_artist:
-                return song_info
+            if not  song_and_artist:
+                return []
             else:
                 song_info.append((track, artist))
-                print(song_info)
+            print(song_info)
                    
             
         
         except KeyError:
             print('Song skipped')
-            track = "Broken Strings"
-            artist = 'James Morrison'
-            song_info.append((track,artist))
+            song_info.append(('Broken Strings', 'James Morrison'))
+            
+    return song_info
             
         
         
@@ -161,7 +162,7 @@ def spotify_urls(track,artist):
     response_json = response.json()
     
     songs = response_json["tracks"]["items"]
-    
+
     url = songs[0]["uri"]
        
     
@@ -194,9 +195,14 @@ def run():
     song_details = yt_song_info(response)
 
     song_urls = []
-    for i in range(len(response['items'])):
-        song_urls.append(spotify_urls(song_details[i][0], song_details[i][1]))
-        
+    try:
+        for i in range(len(response['items'])):
+            #print(song_details[i][0], song_details[i][1])
+            song_urls.append(spotify_urls(song_details[i][0], song_details[i][1]))
+            print(song_urls) 
+    except IndexError:
+        song_urls.append(('','')) 
+        print(song_urls) 
     add_song_to_spotify_playlist(playlist, song_urls)
     
     

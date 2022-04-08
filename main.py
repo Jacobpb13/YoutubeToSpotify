@@ -201,7 +201,7 @@ def run():
             song_urls.append(spotify_urls(song_details[i][0], song_details[i][1]))
             print(song_urls) 
     except IndexError:
-        song_urls.append(('','')) 
+        song_urls.append(spotify_urls('Broken Strings','James Morrison')) 
         print(song_urls) 
     add_song_to_spotify_playlist(playlist, song_urls)
     
